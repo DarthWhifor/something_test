@@ -54,5 +54,11 @@ class Product extends Model
         return $photo->path ?? null;
     }
 
+    public function categoryTitle()
+    {
+        $category = ProductCategory::where('id', $this->category_id)->first();
+        return $category->title;
+    }
+
 
 }

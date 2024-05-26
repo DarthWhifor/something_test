@@ -7,12 +7,16 @@ use App\Models\Comment;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class StormController extends Controller
 {
     public function categories()
     {
         $categories = ProductCategory::all();
+        foreach ($categories as $category) {
+            $category['categorySlug'] = Str::slug($category->title) ?? null;
+        }
         return response()->json([
             'status' => 200,
             'categories' => $categories
@@ -26,6 +30,8 @@ class StormController extends Controller
         $products = $category->products;
         foreach ($products as $product) {
             $product['mainPhoto'] = $product->getMainPhoto($product->id) ?? null;
+            $product['categoryTitle'] = $product->categoryTitle() ?? null;
+            $product['categorySlug'] = Str::slug($product->categoryTitle()) ?? null;
         }
 
         return response()->json([
@@ -52,6 +58,7 @@ class StormController extends Controller
 
         foreach ($products as $product) {
             $product['mainPhoto'] = $product->getMainPhoto() ?? null;
+            $product['categorySlug'] = Str::slug($product->categoryTitle()) ?? null;
         }
 
         return response()->json([

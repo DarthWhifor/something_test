@@ -9,6 +9,8 @@ import { FaTshirt, FaRedhat } from 'react-icons/fa'
 
 import logo from '../../img/logo.svg'
 import axios from "axios";
+import {abortTask} from "next/dist/client/components/router-reducer/ppr-navigations";
+import { useParams } from 'next/navigation'
 
 
 export default function Sidebar({ show, setter }) {
@@ -21,15 +23,17 @@ export default function Sidebar({ show, setter }) {
 
     // Clickable menu items
     const MenuItem = ({ icon, name, route, data }) => {
+        const slugify = require('slugify');
+        const slugName = slugify(name);
         // Highlight menu item based on currently displayed route
-        const colorClass = router.pathname === route ? "text-white" : "text-white/50 hover:text-white";
+        const colorClass =  router.query.slug === data.slug ? "text-white" : "text-white/50 hover:text-white";
 
         return (
-            <Link
+            <Link key={data.category}
                 href={{
                     pathname: route,
                     query: data // the data
-                }} as = {route}
+                }} as = {slugName.toLowerCase()}
                 className={`flex gap-1 [&>*]:my-auto text-md pl-6 py-3 border-b-[1px] border-b-white/10 ${colorClass}`}
             >
                 <div className="text-xl flex [&>*]:mx-auto w-[30px]">
@@ -40,43 +44,45 @@ export default function Sidebar({ show, setter }) {
         )
     }
 
-    // Overlay to prevent clicks in background, also serves as our close button
-    const ModalOverlay = () => (
-        <div
-            className={`flex md:hidden fixed top-0 right-0 bottom-0 left-0 bg-black/50 z-30`}
-            onClick={() => {
-                setter(oldVal => !oldVal);
-            }}
-        />
-    )
     const [newState, setNewState] = useState([])
-    const categories = () => {
-        axios.get('http://127.0.0.1:8000/api/categories')
-            .then(response =>
-                //console.log(response.data.categories);
-                setNewState(response.data.categories)
-            )
-            .catch(error => console.error(error));
-    }
-    categories();
+    useEffect(() => {
+        const categories = async () => {
+            const ourRequest = axios.CancelToken.source();
+            await axios.get('http://127.0.0.1:8000/api/categories', { cancelToken: ourRequest.token,})
+                .then(response =>
+                    {
+                        //console.log(response.data.categories);
+                        setNewState(response.data.categories);
+                        //ourRequest.cancel();
+                    }
+                )
+                .catch(error => console.error(error));
+        }
+        categories();
+    }, []);
+
 
     return (
         <>
             <div className={`${className}${appendClass}`}>
                 <div className="flex flex-col">
+                    <MenuItem
+                        name={'All categories'}
+                        route={'/'}
+                        icon={<FaTshirt />}
+                        data={{category: '', name: '', slug: ''}}/>
                     {
                         newState.length >= 1 ? newState.map((category, idx) => {
                             return <MenuItem key={idx}
                                 name={category.title}
-                                route={ "/category" }
+                                route={'/category'} as = {'/category'}
                                 icon={<FaTshirt />}
-                                data={{category: category.id}}
+                                data={{category: category.id, name: category.title, slug: category.categorySlug}}
                             />
                         }) : ''
                     }
                 </div>
             </div>
-            {show ? <ModalOverlay /> : <></>}
         </>
     )
 }

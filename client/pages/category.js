@@ -1,30 +1,35 @@
 // @/pages/index.js
-import React, {useState} from 'react'
+import React, {useEffect, useState} from 'react'
 import Layout from '../components/Layout'
 import axios from 'axios';
 import Sidebar from '../components/Layout' ;
 import { useRouter } from 'next/router'
 import Link from "next/link";
+import slugify from "slugify";
 
 
 export default function CategoryPage() {
+    const router = useRouter();
+    const [newProducts, setNewProducts] = useState([]);
+    useEffect(() => {
+        const categoryProducts = async() => {
+            const slugify = require('slugify');
+            const data = router.query;
+            const ourRequest = axios.CancelToken.source()
+            const products = await axios.get('http://127.0.0.1:8000/api/' + data.category + '/products', { cancelToken: ourRequest.token,})
+                .then(response =>
 
-    const [newProducts, setNewProducts] = useState([])
-    const categoryProducts = () => {
-        const router = useRouter();
-        const data = router.query;console.log(data.category);
-        const ourRequest = axios.CancelToken.source()
-        const products = axios.get('http://127.0.0.1:8000/api/' + data.category + '/products', { cancelToken: ourRequest.token,})
-            .then(response =>
-                //console.log(response.data)
-                {
-                    setNewProducts(response.data.products);
-                    ourRequest.cancel();
-                }
-            )
-            .catch(error => console.error(error));
-    }
-    categoryProducts();
+                    {
+                        //console.log(response.data);
+                        setNewProducts(response.data.products);
+                        //ourRequest.cancel();
+                    }
+                )
+                .catch(error => console.error(error));
+        }
+        categoryProducts();
+    }, []);
+
     return (
         <Layout>
             <div className="p-4 sm:ml-64 grid grid-cols-4 gap-4">
@@ -45,8 +50,8 @@ export default function CategoryPage() {
                                     </p>
                                     <Link href={{
                                         pathname: "/product",
-                                        query: {id:"/"+product.id}
-                                    }}>
+                                        query: {id: product.id, slug: product.categorySlug}
+                                    }} as = {slugify(product.categoryTitle).toLowerCase() + '/' + slugify(product.title).toLowerCase() }>
                                         Comment
                                     </Link>
                                 </div>

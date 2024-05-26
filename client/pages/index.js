@@ -1,23 +1,33 @@
 // @/pages/index.js
-import React, {useState} from 'react'
+import React, {useEffect, useState} from 'react'
 import Layout from '../components/Layout'
 import axios from 'axios';
 import Sidebar from '../components/Layout' ;
 import { useRouter } from 'next/router'
 import Link from "next/link";
+import slugify from "slugify";
 
 export default function HomePage() {
     const router = useRouter();
-    const [newState, setNewState] = useState([])
-    const products = () => {
-        axios.get('http://127.0.0.1:8000/api/all-products')
-            .then(response =>
-                //console.log(response.data.products)
-                setNewState(response.data.products)
-            )
-            .catch(error => console.error(error));
-    }
-    products();
+    const [newState, setNewState] = useState([]);
+    useEffect(() => {
+        const products = async () => {
+            const slugify = require('slugify');
+            const ourRequest = axios.CancelToken.source();
+            await axios.get('http://127.0.0.1:8000/api/all-products', { cancelToken: ourRequest.token,})
+                .then(response =>
+                    {
+                        //console.log(response.data.products)
+                        setNewState(response.data.products);
+                        //ourRequest.cancel();
+                    }
+                )
+                .catch(error => console.error(error));
+        }
+        products();
+    }, []);
+
+
     return (
         <Layout>
             <div className="p-4 sm:ml-64 grid grid-cols-4 gap-4">
@@ -38,8 +48,8 @@ export default function HomePage() {
                                             </p>
                                             <Link href={{
                                                 pathname: "/product",
-                                                query: {id:"/"+product.id}
-                                            }}>
+                                                query: {id:  product.id, slug: product.categorySlug}
+                                            }} as = {product.categorySlug + '/' + slugify(product.title).toLowerCase()}>
                                                 Comment
                                             </Link>
                                         </div>
